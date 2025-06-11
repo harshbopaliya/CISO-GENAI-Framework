@@ -24,7 +24,7 @@ install_requires = get_requirements("requirements.txt")
 
 setuptools.setup(
     name="ciso-genai", # This is the name your package will be known by on PyPI
-    version="0.0.2", # <--- IMPORTANT: Increment the version (e.g., to 0.0.8 or 0.1.0)
+    version="0.0.1", # <--- IMPORTANT: Increment the version (e.g., to 0.0.8 or 0.1.0)
                      #      Always use a new version for each upload attempt to TestPyPI/PyPI.
     author="Harsh Bopaliya", # Your Name
     author_email="bopaliyaharsh7@gmail.com", # <--- IMPORTANT: Replace with your actual email
