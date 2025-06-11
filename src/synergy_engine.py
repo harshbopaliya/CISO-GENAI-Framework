@@ -1,12 +1,3 @@
-# import torch
-
-# class HJBSolver:
-#     def __init__(self, lambda_reg=0.1):
-#         self.lambda_reg = lambda_reg
-
-#     def __call__(self, states):
-#         s_emb = states
-#         return s_emb.pow(2).sum(dim=-1, keepdim=True) * self.lambda_reg
 import torch
 import torch.nn as nn
 
