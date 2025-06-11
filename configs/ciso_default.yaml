@@ -1,10 +1,18 @@
+# configs/ciso_default.yaml
+
 env:
   name: "gridworld"
   num_agents: 3
-  max_steps: 1000
+  grid_size: 5 # Define grid size explicitly
+  max_steps: 1000 # Max steps for each episode during training
 
 ciso:
   gamma: 0.99
   causal_shapley_beta: 0.5
   hjb_lambda: 0.1
   topology_eps: 0.3
+
+training: # <-- NEW SECTION ADDED
+  num_episodes: 100 # Number of training episodes
+  learning_rate: 0.001 # Example learning rate for policies
+  save_interval: 10 # Save model every X episodes
