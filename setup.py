@@ -24,7 +24,7 @@ install_requires = get_requirements("requirements.txt")
 
 setuptools.setup(
     name="ciso-genai", # This is the name your package will be known by on PyPI
-    version="0.0.1", # <--- IMPORTANT: Increment the version (e.g., to 0.0.8 or 0.1.0)
+    version="0.0.2", # <--- IMPORTANT: Version incremented to reflect changes and ensure unique upload.
                      #      Always use a new version for each upload attempt to TestPyPI/PyPI.
     author="Harsh Bopaliya", # Your Name
     author_email="bopaliyaharsh7@gmail.com", # <--- IMPORTANT: Replace with your actual email
@@ -32,23 +32,18 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/harshbopaliya/CISO-GENAI-Framework", # Corrected URL format (no Markdown)
-    # --- CRITICAL CONFIGURATION FOR YOUR CURRENT STRUCTURE ---
-    # This tells setuptools: "When you build the 'ciso_genai' package,
-    # its content comes from the 'src' directory in my local project."
+    # --- ADDED LICENSE FIELD ---
+    license="MIT License", # <--- This line was added/corrected to ensure license metadata is included.
+    # --- END ADDED LICENSE FIELD ---
     package_dir={'ciso_genai': 'src'},
-    # This explicitly lists the top-level package and its sub-packages
-    # that should be installed *under the 'ciso_genai' namespace*.
-    # 'ciso_genai' maps to 'src/'
-    # 'ciso_genai.envs' maps to 'src/envs/'
     packages=['ciso_genai', 'ciso_genai.envs'],
     # We don't need `setuptools.find_packages` with `where` or `exclude` here,
     # as `package_dir` and explicit `packages` list handle the mapping.
-    # --- END CRITICAL CONFIGURATION ---
     classifiers=[
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: MIT License", # This classifier is good for filtering on PyPI
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
