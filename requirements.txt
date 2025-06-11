@@ -1,7 +1,19 @@
+# Core dependencies for CISO-GENAI Framework
+
+# PyTorch (for neural networks) - specify version compatible with your setup
+# Note: For GPU support, users might need to install torch separately using
+#       PyTorch's official instructions (e.g., from pytorch.org)
 torch>=2.0.0
-numpy>=1.22.0
-gymnasium>=0.28.0
-pyyaml>=6.0
-ripser>=0.6.4
-tqdm>=4.65.0
-pygame
+
+# Numerical operations
+numpy>=1.26.0
+
+# Reinforcement learning environment API
+gymnasium>=1.0.0
+
+# Topological Data Analysis for group formation
+ripser>=0.6.12
+
+# YAML configuration file parsing
+PyYAML>=6.0.0
+
