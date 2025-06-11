@@ -12,7 +12,7 @@ from src.causal_engine import CausalAdvantage
 from src.synergy_engine import HJBSolver
 from src.topology_engine import TopologyGroups
 from src.policies import AgentPolicy
-from configs.envs.gridworld import GridWorldEnv
+from src.envs.gridworld import GridWorldEnv
 
 def train():
     # Load configuration from the 'configs' directory.

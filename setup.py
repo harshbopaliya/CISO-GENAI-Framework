@@ -24,34 +24,38 @@ install_requires = get_requirements("requirements.txt")
 
 setuptools.setup(
     name="ciso-genai", # This is the name your package will be known by on PyPI
-    version="0.0.1", # Start with a development version (major.minor.patch)
+    version="0.0.2", # <--- IMPORTANT: Increment the version (e.g., to 0.0.8 or 0.1.0)
+                     #      Always use a new version for each upload attempt to TestPyPI/PyPI.
     author="Harsh Bopaliya", # Your Name
     author_email="bopaliyaharsh7@gmail.com", # <--- IMPORTANT: Replace with your actual email
     description="A framework for Causal Intelligence in Multi-Agent Generative AI.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/harshbopaliya/CISO-GENAI-Framework", # <--- IMPORTANT: Replace with your actual GitHub repo URL
-    packages=setuptools.find_packages(exclude=["agent_demo*", "tests*"]), # Automatically finds Python packages (folders with __init__.py)
-    # Changed: Added 'exclude=["agent_demo*", "tests*"]' to ensure the demo folder
-    # and any potential test folders are NOT installed as part of the framework.
-    # This assumes 'agent_demo' is purely for demonstration and not a module.
-    # If agent_demo should be installable, remove "agent_demo*" from exclude.
+    url="https://github.com/harshbopaliya/CISO-GENAI-Framework", # Corrected URL format (no Markdown)
+    # --- CRITICAL CONFIGURATION FOR YOUR CURRENT STRUCTURE ---
+    # This tells setuptools: "When you build the 'ciso_genai' package,
+    # its content comes from the 'src' directory in my local project."
+    package_dir={'ciso_genai': 'src'},
+    # This explicitly lists the top-level package and its sub-packages
+    # that should be installed *under the 'ciso_genai' namespace*.
+    # 'ciso_genai' maps to 'src/'
+    # 'ciso_genai.envs' maps to 'src/envs/'
+    packages=['ciso_genai', 'ciso_genai.envs'],
+    # We don't need `setuptools.find_packages` with `where` or `exclude` here,
+    # as `package_dir` and explicit `packages` list handle the mapping.
+    # --- END CRITICAL CONFIGURATION ---
     classifiers=[
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12", # Added Python 3.12 classifier
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Development Status :: 2 - Pre-Alpha", # 1 - Planning, 2 - Pre-Alpha, 3 - Alpha, 4 - Beta, 5 - Production/Stable
+        "Development Status :: 2 - Pre-Alpha",
     ],
-    python_requires='>=3.8', # Minimum required Python version
-    install_requires=install_requires, # List of dependencies from requirements.txt
-    include_package_data=True, # <--- IMPORTANT: Added this line.
-    # This tells setuptools to look for a MANIFEST.in file and include
-    # the non-Python files specified there (like your .yaml config files)
-    # when building the wheel and installing the package.
+    python_requires='>=3.8',
+    install_requires=install_requires,
+    include_package_data=True, # This tells setuptools to include non-Python files specified in MANIFEST.in
 )
-

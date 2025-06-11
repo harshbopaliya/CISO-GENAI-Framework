@@ -30,16 +30,16 @@ This repository provides a foundational demo illustrating how the CISO component
 ```
 CISO-GENAI/
 ├── configs/
-│   ├── envs/
-│   │   └── gridworld.py          # Gymnasium GridWorld environment setup
 │   └── ciso_default.yaml         # Default configurations for CISO components
 ├── src/
-│   ├── causal_engine.py          # Implementation of Causal Advantage Intervention
+│   ├── envs/
+│   │   └── gridworld.py          # Gymnasium GridWorld environment setup
+│   ├── causal_engine.py          # Implementation of Causal Advantage
 │   ├── policies.py               # Base policy network for agents
-│   ├── synergy_engine.py         # Approximation of Emergent Synergy Manifolds (HJB Solver)
+│   ├── synergy_engine.py         # Approximation of Emergent Synergy Manifolds
 │   ├── topology_engine.py        # Implementation of Topological Group Formation
 │   └── ...
-├── agent_demo/                   # Directory for the multi-agent CISO demonstration
+├── agent_demo/                   # Directory for the multi-agent CISO
 │   ├── demo_config.yaml          # Configurations specific to the demo
 │   ├── demo_env.py               # The GridWorldEnv used in the demo
 │   ├── agents.py                 # Defines the agent classes (Planner, Coder, Debater)
