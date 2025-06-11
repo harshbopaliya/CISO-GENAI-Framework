@@ -75,15 +75,21 @@ source venv/bin/activate
 
 ### 3. Install Dependencies
 
+Since the ciso-genai framework is now published on PyPI, you can install it directly.
+
+First, install PyTorch, as it's a core dependency and requires specific installation based on your system (CPU/GPU).
+
+For CPU-only PyTorch:
 ```bash
-pip install -r requirements.txt
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 ```
 
-> **Note**: If `requirements.txt` is missing, install manually:
->
-> ```bash
-> pip install torch numpy gymnasium ripser PyYAML
-> ```
+Then, install the ciso-genai framework and its remaining dependencies:
+```bash
+pip install ciso-genai
+```
+
+> **Note**: This command will automatically install dependencies like numpy, gymnasium, ripser, and PyYAML as specified in ciso-genai's setup.py. If you want to use the local requirements.txt for development or specific version pinning, you can run `pip install -r requirements.txt` after installing PyTorch.
 
 ## Running the Demo
 
@@ -95,6 +101,19 @@ python -m agent_demo.demo_app
 
 This will start a simulation in the GridWorld environment with three agents. The CISO framework components will analyze their interactions at each step.
 
+### Running the Training Script
+
+You can also run the training script to see the framework in a learning context:
+
+```bash
+python train.py
+```
+
+This will show output like:
+```
+Episode 21, Step 328 | Groups: [] | Advantage: -0.356 | Synergy: -0.082
+```
+
 ## Understanding the Demo Output
 
 The demo output will display information at each simulation step:
@@ -105,7 +124,30 @@ The demo output will display information at each simulation step:
 - **Emergent Synergy (Mean HJB Value)**: A scalar value approximating the overall synergy or fluidity of collaboration
 - **Topological Groups Discovered**: A list of lists, where each inner list contains the numerical indices of agents identified as a cohesive group based on their proximity
 
-> **Note**: `[]` (empty list) means no two agents are within the `topology_eps` threshold defined in `agent_demo/demo_config.yaml`. To see groups, consider increasing `topology_eps` (e.g., to 1.5, 2.0, or 2.5) as the grid coordinates are integers.
+### Sample Demo Output
+
+```
+--- Simulation Step 999/1000 ---
+  agent_0 chose action: 1
+  agent_1 chose action: 2
+  agent_2 chose action: 2
+  Step 999 - Agent Positions: {'agent_0': array([4, 3], dtype=int32), 'agent_1': array([4, 0], dtype=int32), 'agent_2': array([4, 0], dtype=int32)} - Rewards: {'agent_0': np.float64(-2.23606797749979), 'agent_1': np.float64(-2.8284271247461903), 'agent_2': np.float64(-2.8284271247461903)}
+  Causal Advantage (Global): -0.866 (Conceptually A_do_C + sum(gamma_k * E_do(a_k)[A_syn_k]))
+  Emergent Synergy (Mean HJB Value): 0.039 (Approximation of HJB PDE solution for synergy)
+  Topological Groups Discovered: [[1, 2]] (H_0 connected components at eps=0.3)
+--- Simulation Step 1000/1000 ---
+  agent_0 chose action: 1
+  agent_1 chose action: 2
+  agent_2 chose action: 1
+  Step 1000 - Agent Positions: {'agent_0': array([4, 3], dtype=int32), 'agent_1': array([4, 0], dtype=int32), 'agent_2': array([4, 0], dtype=int32)} - Rewards: {'agent_0': np.float64(-2.23606797749979), 'agent_1': np.float64(-2.8284271247461903), 'agent_2': np.float64(-2.8284271247461903)}
+  Causal Advantage (Global): -0.828 (Conceptually A_do_C + sum(gamma_k * E_do(a_k)[A_syn_k]))
+  Emergent Synergy (Mean HJB Value): 0.033 (Approximation of HJB PDE solution for synergy)
+  Topological Groups Discovered: [[1, 2]] (H_0 connected components at eps=0.3)
+--- Simulation Episode Finished (Done: True, Truncated: False) ---
+--- Demo Concluded ---
+```
+
+> **Note**: `[]` (empty list) means no two agents are within the `topology_eps` threshold defined in `agent_demo/demo_config.yaml`. When agents are close enough, you'll see groups like `[[1, 2]]` indicating agents 1 and 2 form a topological group.
 
 ## Agents in the Demo
 
