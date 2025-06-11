@@ -1,0 +1,7 @@
+torch>=2.0.0
+numpy>=1.22.0
+gymnasium>=0.28.0
+pyyaml>=6.0
+ripser>=0.6.4
+tqdm>=4.65.0
+pygame

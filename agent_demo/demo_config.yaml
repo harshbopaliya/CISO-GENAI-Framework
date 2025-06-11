@@ -1,0 +1,12 @@
+# agent_demo/demo_config.yaml
+
+env:
+  name: "gridworld"
+  num_agents: 3
+  max_steps: 1000 # Max steps for each episode in the demo
+
+ciso:
+  gamma: 0.99
+  causal_shapley_beta: 0.5 # A new parameter, not explicitly used in the minimal CISO components provided, but kept for consistency
+  hjb_lambda: 0.1
+  topology_eps: 0.3

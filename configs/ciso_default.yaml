@@ -1,0 +1,10 @@
+env:
+  name: "gridworld"
+  num_agents: 3
+  max_steps: 1000
+
+ciso:
+  gamma: 0.99
+  causal_shapley_beta: 0.5
+  hjb_lambda: 0.1
+  topology_eps: 0.3
