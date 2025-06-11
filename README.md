@@ -57,7 +57,7 @@ To set up and run the CISO-GENAI demo, follow these steps:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/CISO-GENAI-Framework.git
+git clone https://github.com/harshbopaliya/CISO-GENAI-Framework.git
 cd CISO-GENAI-Framework
 ```
 
