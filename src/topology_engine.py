@@ -1,85 +1,154 @@
+"""
+Agent Clustering Engine
+
+Groups agents based on their interactions and proximity in state space.
+Useful for:
+1. Discovering which agents naturally work together
+2. Reducing computation by treating clusters as single units
+3. Hierarchical credit assignment (credit to groups, then within groups)
+"""
+
 import numpy as np
-# from ripser import Rips # Not directly used for simple clustering, but kept for context if needed for higher homology
+from typing import List, Dict, Tuple
 
-class TopologyGroups:
+
+class AgentClusterer:
     """
-    Identifies topological groups (connected components) among agents based on
-    their proximity in the state space using a direct distance threshold (eps).
-    This simulates the 'Topological Group Formation' part of the CISO theory,
-    focusing on H_0 (connected components).
+    Clusters agents into groups based on state-space proximity.
+    
+    Uses Disjoint Set Union (DSU) for efficient connected component detection.
     """
-    def __init__(self, eps: float = 0.3):
+    
+    def __init__(self, eps: float = 1.0):
         """
-        Initializes the TopologyGroups component.
-
+        Initialize the clusterer.
+        
         Args:
-            eps (float): The maximum Euclidean distance between two agents for them
-                         to be considered connected and potentially part of the same group.
+            eps: Maximum distance for two agents to be considered "connected"
         """
         self.eps = eps
-        # In a full ripser integration for persistent homology, you might initialize:
-        # self.rips = Rips(maxdim=0, coeff=2, thresh=self.eps)
-        # However, for simply extracting epsilon-connected components, direct DSU is clearer.
-
-    def cluster(self, states: np.ndarray) -> list[list[int]]:
+    
+    def cluster(self, states: np.ndarray) -> List[List[int]]:
         """
-        Clusters agents into groups based on their proximity using the 'eps' threshold.
-        This method uses a Disjoint Set Union (DSU) approach to find connected components.
-
+        Cluster agents based on proximity.
+        
         Args:
-            states (np.ndarray): A NumPy array of agent states.
-                                 Expected shape: (num_agents, state_dim).
-
+            states: Array of shape (num_agents, state_dim)
+        
         Returns:
-            list[list[int]]: A list of lists, where each inner list contains the indices
-                             of agents belonging to the same connected group.
-                             Only groups with more than one agent are returned to represent
-                             meaningful collaboration.
+            List of groups, where each group is a list of agent indices.
+            Only groups with 2+ agents are returned.
         """
         num_agents = states.shape[0]
         if num_agents == 0:
             return []
-
-        # Disjoint Set Union (DSU) data structure for finding connected components
-        parent = list(range(num_agents)) # Each agent is initially its own parent (own set)
-
-        def find(i):
-            """Finds the representative (root) of the set containing element i."""
-            if parent[i] == i:
-                return i
-            # Path compression: make the current node's parent the root
-            parent[i] = find(parent[i])
+        
+        # DSU (Disjoint Set Union) data structure
+        parent = list(range(num_agents))
+        
+        def find(i: int) -> int:
+            if parent[i] != i:
+                parent[i] = find(parent[i])  # Path compression
             return parent[i]
-
-        def union(i, j):
-            """Unites the sets containing elements i and j."""
-            root_i = find(i)
-            root_j = find(j)
+        
+        def union(i: int, j: int):
+            root_i, root_j = find(i), find(j)
             if root_i != root_j:
-                parent[root_i] = root_j # Merge set of i into set of j
-                return True
-            return False
-
-        # Build connections based on the 'eps' threshold
-        # Iterate through all unique pairs of agents
+                parent[root_i] = root_j
+        
+        # Connect agents within epsilon distance
         for i in range(num_agents):
-            for j in range(i + 1, num_agents): # Ensure unique pairs (i, j) and avoid (i, i)
-                # Calculate the Euclidean distance between agent i's state and agent j's state
+            for j in range(i + 1, num_agents):
                 distance = np.linalg.norm(states[i] - states[j])
-                # If the distance is within the epsilon threshold, union their sets
                 if distance <= self.eps:
                     union(i, j)
-
-        # Extract groups from the DSU structure
-        groups_map = {}
+        
+        # Extract groups
+        groups_map: Dict[int, List[int]] = {}
         for i in range(num_agents):
-            root = find(i) # Find the root for each agent
+            root = find(i)
             if root not in groups_map:
                 groups_map[root] = []
-            groups_map[root].append(i) # Add agent to its corresponding group
+            groups_map[root].append(i)
+        
+        # Return only multi-agent groups
+        return [sorted(g) for g in groups_map.values() if len(g) > 1]
+    
+    def cluster_by_agent_ids(
+        self, 
+        agent_states: Dict[str, np.ndarray]
+    ) -> List[List[str]]:
+        """
+        Cluster using agent IDs instead of indices.
+        
+        Args:
+            agent_states: Dict mapping agent_id -> state array
+        
+        Returns:
+            List of groups, each group is a list of agent IDs
+        """
+        agent_ids = list(agent_states.keys())
+        states = np.array([agent_states[aid] for aid in agent_ids])
+        
+        index_groups = self.cluster(states)
+        
+        # Convert indices to agent IDs
+        return [[agent_ids[i] for i in group] for group in index_groups]
 
-        # Filter for groups that contain more than one agent
-        # Sort each group internally and sort the list of groups for consistent output
-        final_groups = [sorted(group) for group in groups_map.values() if len(group) > 1]
 
-        return final_groups
+class InteractionTracker:
+    """
+    Track agent interactions over time to discover stable groups.
+    """
+    
+    def __init__(self, eps: float = 1.0, history_length: int = 100):
+        """
+        Args:
+            eps: Distance threshold for interaction
+            history_length: Number of steps to track
+        """
+        self.eps = eps
+        self.history_length = history_length
+        self.interaction_counts: Dict[Tuple[str, str], int] = {}
+        self.step_count = 0
+    
+    def record_step(self, agent_states: Dict[str, np.ndarray]):
+        """Record interactions at current step."""
+        agent_ids = list(agent_states.keys())
+        
+        for i, aid_i in enumerate(agent_ids):
+            for aid_j in agent_ids[i+1:]:
+                distance = np.linalg.norm(
+                    agent_states[aid_i] - agent_states[aid_j]
+                )
+                if distance <= self.eps:
+                    pair = tuple(sorted([aid_i, aid_j]))
+                    self.interaction_counts[pair] = \
+                        self.interaction_counts.get(pair, 0) + 1
+        
+        self.step_count += 1
+    
+    def get_frequent_pairs(self, min_frequency: float = 0.5) -> List[Tuple[str, str]]:
+        """
+        Get agent pairs that interact frequently.
+        
+        Args:
+            min_frequency: Minimum fraction of steps with interaction
+        
+        Returns:
+            List of (agent_i, agent_j) tuples
+        """
+        threshold = self.step_count * min_frequency
+        return [
+            pair for pair, count in self.interaction_counts.items()
+            if count >= threshold
+        ]
+    
+    def reset(self):
+        """Clear interaction history."""
+        self.interaction_counts = {}
+        self.step_count = 0
+
+
+# Backward compatibility alias
+TopologyGroups = AgentClusterer

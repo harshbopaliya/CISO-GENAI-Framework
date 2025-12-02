@@ -1,18 +1,36 @@
 # configs/ciso_default.yaml
+# Configuration for CISO Multi-Agent Credit Assignment Framework
 
 env:
   name: "gridworld"
-  num_agents: 3
-  grid_size: 5 # Define grid size explicitly
-  max_steps: 1000 # Max steps for each episode during training
+  num_agents: 2          # Number of agents in the environment
+  grid_size: 5           # Size of the grid (5x5)
+  max_steps: 10          # Max steps per episode
 
-ciso:
-  gamma: 0.99
-  causal_shapley_beta: 0.5
-  hjb_lambda: 0.1
-  topology_eps: 0.3
+# Credit Assignment Settings
+credit_assignment:
+  method: "shapley"      # Options: "marginal", "shapley"
+  shapley_samples: 50    # Monte-Carlo samples for Shapley estimation
+  baseline_policy: "random"  # Options: "random", "stay"
 
-training: # <-- NEW SECTION ADDED
-  num_episodes: 100 # Number of training episodes
-  learning_rate: 0.001 # Example learning rate for policies
-  save_interval: 10 # Save model every X episodes
+# Synergy Detection Settings
+synergy:
+  enabled: true
+  min_coalition_size: 2
+
+# Agent Clustering Settings
+clustering:
+  eps: 1.0               # Distance threshold for grouping agents
+  track_interactions: true
+  interaction_history: 100
+
+# Policy Settings
+policies:
+  default: "center"      # Default policy: move towards center
+  exploration_epsilon: 0.1
+
+# Training Settings (for future learning)
+training:
+  num_episodes: 100
+  learning_rate: 0.001
+  save_interval: 10

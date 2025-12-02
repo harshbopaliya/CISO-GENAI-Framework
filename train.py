@@ -1,102 +1,202 @@
+"""
+CISO Credit Assignment Training Demo
+
+Demonstrates causal credit assignment in a multi-agent GridWorld:
+1. Multiple agents act with different policies
+2. Environment returns a SHARED reward
+3. Framework attributes the reward to individual agents causally
+
+This answers: "Which agent actually CAUSED the reward?"
+"""
+
 import yaml
-import torch
+import random
+import numpy as np
+from typing import Dict, Callable
 
-from src.causal_engine import CausalAdvantage
-from src.synergy_engine import HJBSolver
-from src.topology_engine import TopologyGroups
-from src.policies import AgentPolicy
-from src.envs.gridworld import GridWorldEnv
+from src.envs.gridworld import GridWorld, rollout
+from src.causal_engine import CausalCreditAssignment, ShapleyValueEstimator, CounterfactualBaseline
+from src.synergy_engine import SynergyDetector
+from src.topology_engine import AgentClusterer
+from src.policies import PolicyRegistry, random_policy
 
-def train():
-    # Load configuration from the 'configs' directory.
-    # 'train.py' lives in the project root, so 'configs/ciso_default.yaml'
-    # is relative to 'train.py' itself.
+
+def main():
+    """Run the credit assignment demo."""
+    
+    print("=" * 60)
+    print("🚀 CISO-GENAI: Causal Credit Assignment Demo")
+    print("=" * 60)
+    
+    # Load configuration
     with open("configs/ciso_default.yaml") as f:
         config = yaml.safe_load(f)
-
-    # Environment and agent parameters
-    num_agents = config["env"]["num_agents"]
-    # Assuming each agent's state is (x, y), so state_dim = 2
-    single_agent_state_dim = 2 
     
-    # Initialize the GridWorld environment
-    env = GridWorldEnv(num_agents=num_agents)
-    # Ensure env's max_steps matches config for consistency
-    env.max_steps = config["env"]["max_steps"]
+    # Setup
+    grid_size = config["env"]["grid_size"]
+    max_steps = config["env"]["max_steps"]
+    num_samples = config["credit_assignment"]["shapley_samples"]
     
-    # Initialize policies for each agent
-    policies = {f"agent_{i}": AgentPolicy() for i in range(num_agents)} 
+    # Initialize environment
+    env = GridWorld(grid_size=grid_size, max_steps=max_steps)
     
-    # Initialize the optimizer for training policies
-    optimizer = torch.optim.Adam([p for policy in policies.values() for p in policy.parameters()])
+    # Initialize policy registry
+    policies = PolicyRegistry(grid_size=grid_size)
     
-    # Initialize CISO analytical components
-    # CausalAdvantage takes the flattened total state dimension (num_agents * single_agent_state_dim)
-    causal_net = CausalAdvantage(state_dim=num_agents * single_agent_state_dim)
-    # HJBSolver takes the individual agent state dimension
-    hjb_solver = HJBSolver(lambda_reg=config["ciso"]["hjb_lambda"], state_dim=single_agent_state_dim)
-    # TopologyGroups takes the epsilon threshold for clustering
-    topo = TopologyGroups(eps=config["ciso"]["topology_eps"])
+    # Define agents and their policies
+    # Agent A: Smart (moves to center)
+    # Agent B: Smart (also moves to center)
+    agent_policies = {
+        "agent_A": policies.get("center"),  # Smart policy
+        "agent_B": policies.get("center"),  # Smart policy
+    }
+    
+    # Starting positions
+    starts = {
+        "agent_A": np.array([0, 0]),    # Top-left corner
+        "agent_B": np.array([4, 4]),    # Bottom-right corner
+    }
+    
+    # Baseline policy for counterfactuals
+    baseline = random_policy
+    
+    print("\n📍 Setup:")
+    print(f"   Grid size: {grid_size}x{grid_size}")
+    print(f"   Max steps: {max_steps}")
+    print(f"   Agent A starts at: {starts['agent_A']} (policy: center-seeking)")
+    print(f"   Agent B starts at: {starts['agent_B']} (policy: center-seeking)")
+    print(f"   Baseline for counterfactuals: random")
+    
+    # ============== 1. Run full episode ==============
+    print("\n" + "=" * 60)
+    print("📊 STEP 1: Full Episode Rollout (Both Agents Active)")
+    print("=" * 60)
+    
+    random.seed(42)
+    np.random.seed(42)
+    
+    R_full, trajectory = rollout(env, starts, agent_policies)
+    
+    print(f"\n   Cumulative Team Reward: {R_full:.2f}")
+    print("\n   Trajectory:")
+    for step, state in enumerate(trajectory):
+        print(f"      Step {step}: A={state['agent_A']} B={state['agent_B']}")
+    
+    # ============== 2. Marginal Contributions ==============
+    print("\n" + "=" * 60)
+    print("🔬 STEP 2: Marginal Contributions (Do-Intervention)")
+    print("=" * 60)
+    print("\n   Question: What if each agent acted randomly instead?")
+    
+    credit_engine = CausalCreditAssignment(baseline_policy=baseline)
+    
+    marginals = credit_engine.compute_all_marginals(
+        env, starts, agent_policies, rollout
+    )
+    
+    print("\n   Results:")
+    for agent, marginal in marginals.items():
+        print(f"      {agent}: {marginal:+.2f}")
+        if marginal > 0:
+            print(f"         → {agent} HELPED (reward dropped by {marginal:.2f} without them)")
+        elif marginal < 0:
+            print(f"         → {agent} HURT (reward increased by {-marginal:.2f} without them)")
+        else:
+            print(f"         → {agent} had NO EFFECT")
+    
+    print(f"\n   Sum of marginals: {sum(marginals.values()):.2f}")
+    
+    # ============== 3. Shapley Values ==============
+    print("\n" + "=" * 60)
+    print("⚖️  STEP 3: Shapley Values (Fair Credit Assignment)")
+    print("=" * 60)
+    print(f"\n   Monte-Carlo estimation with {num_samples} samples...")
+    
+    shapley_estimator = ShapleyValueEstimator(
+        baseline_policy=baseline, 
+        num_samples=num_samples
+    )
+    
+    shapley_values = shapley_estimator.estimate(
+        env, starts, agent_policies, rollout
+    )
+    
+    print("\n   Shapley Values (fair distribution):")
+    for agent, value in shapley_values.items():
+        print(f"      {agent}: {value:+.2f}")
+    
+    print(f"\n   Sum of Shapley values: {sum(shapley_values.values()):.2f}")
+    print(f"   (Should approximately equal full reward: {R_full:.2f})")
+    
+    # ============== 4. Synergy Detection ==============
+    print("\n" + "=" * 60)
+    print("🤝 STEP 4: Synergy Detection")
+    print("=" * 60)
+    print("\n   Question: Do agents perform better TOGETHER than alone?")
+    
+    synergy_detector = SynergyDetector(baseline_policy=baseline)
+    
+    coalition = list(agent_policies.keys())
+    synergy = synergy_detector.compute_synergy(
+        env, starts, agent_policies, rollout, coalition
+    )
+    
+    print(f"\n   Synergy(A, B) = {synergy:+.2f}")
+    if synergy > 0:
+        print("   → Agents COMPLEMENT each other (better together)")
+    elif synergy < 0:
+        print("   → Agents INTERFERE with each other (worse together)")
+    else:
+        print("   → Agents are INDEPENDENT (no synergy)")
+    
+    # ============== 5. Different Policy Scenario ==============
+    print("\n" + "=" * 60)
+    print("🔄 STEP 5: Asymmetric Policies (A=smart, B=random)")
+    print("=" * 60)
+    
+    asymmetric_policies = {
+        "agent_A": policies.get("center"),  # Smart
+        "agent_B": random_policy,            # Random (bad)
+    }
+    
+    R_asymmetric, _ = rollout(env, starts, asymmetric_policies)
+    print(f"\n   Team reward with A=smart, B=random: {R_asymmetric:.2f}")
+    
+    # Credit assignment for asymmetric case
+    asymmetric_marginals = credit_engine.compute_all_marginals(
+        env, starts, asymmetric_policies, rollout
+    )
+    
+    print("\n   Marginal contributions:")
+    for agent, marginal in asymmetric_marginals.items():
+        print(f"      {agent}: {marginal:+.2f}")
+    
+    print("\n   Note: When B is already random, replacing B with random")
+    print("   should give ~0 marginal (B contributes nothing extra)")
+    
+    # ============== Summary ==============
+    print("\n" + "=" * 60)
+    print("📋 SUMMARY: Causal Credit Assignment")
+    print("=" * 60)
+    print("""
+   The CISO framework answers the fundamental question:
+   
+   "Given a shared reward, which agent CAUSED it?"
+   
+   Methods demonstrated:
+   1. Marginal Contribution: R_with_agent - R_without_agent
+   2. Shapley Values: Fair attribution considering all orderings
+   3. Synergy Detection: Do agents help or hurt each other?
+   
+   Key insight: We use INTERVENTIONS (do-calculus), not just
+   correlations, to determine true causal credit.
+    """)
+    
+    print("=" * 60)
+    print("✅ Demo Complete!")
+    print("=" * 60)
 
-    print(f"Starting training for {num_agents} agents over {config['training']['num_episodes']} episodes...")
-
-    # Main training loop
-    for episode in range(config["training"]["num_episodes"]):
-        # FIX: Ensure env.reset() returns (observation, info)
-        # The GridWorldEnv from demo_env_py should already do this.
-        obs, info = env.reset() 
-        done = False
-        truncated = False
-        step_count = 0
-        
-        # Episode loop
-        # Loop until episode is done (e.g., all agents reached goal) or truncated (e.g., max steps reached)
-        while not done and not truncated and step_count < config["env"]["max_steps"]: 
-            actions = {}
-            # Agents choose actions based on their current policy and observation
-            for agent_id, policy in policies.items():
-                # Ensure observation is a tensor before passing to policy network
-                logits = policy(torch.tensor(obs[agent_id], dtype=torch.float32))
-                actions[agent_id] = torch.argmax(logits).item() # Assuming discrete actions (0,1,2,3 for GridWorld)
-
-            # Step the environment with chosen actions
-            # Gymnasium step returns (observations, rewards, done, truncated, info)
-            next_obs, rewards, episode_done, truncated, info = env.step(actions) 
-            
-            # Check if any agent's 'done' status signals global episode termination
-            # Assuming 'episode_done' is a dict of {agent_id: bool} or a single bool
-            if isinstance(episode_done, dict):
-                # If all agents are individually done, the episode is done
-                done = all(episode_done.values())
-            else:
-                # If it's a single boolean, use it directly
-                done = episode_done
-
-
-            # Prepare current states for CISO component analysis
-            # Stack agent observations into a single PyTorch tensor (num_agents, single_agent_state_dim)
-            current_states_tensor = torch.stack([
-                torch.tensor(obs[k], dtype=torch.float32) for k in obs.keys()
-            ])
-
-            # Apply CISO components for analysis
-            # Causal Advantage requires a flattened state tensor (batch_size=1, total_state_dim)
-            adv = causal_net(current_states_tensor.flatten().unsqueeze(0)) 
-            synergy = hjb_solver(current_states_tensor)
-            groups = topo.cluster(current_states_tensor.detach().numpy()) # Convert to NumPy for ripser
-
-            # Print current step's analysis results
-            # FIX: Use .mean().item() for Causal Advantage if it's a multi-element tensor
-            print(f"Episode {episode}, Step {step_count} | Groups: {groups} | Advantage: {adv.mean().item():.3f} | Synergy: {synergy.mean().item():.3f}")
-
-            # Update observation for the next loop iteration
-            obs = next_obs 
-            step_count += 1
-            
-        print(f"Episode {episode} finished. Done: {done}, Truncated: {truncated}")
-
-    print("\n--- Training Concluded ---")
 
 if __name__ == "__main__":
-    train()
+    main()
 

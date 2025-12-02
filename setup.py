@@ -23,34 +23,44 @@ def get_requirements(filepath):
 install_requires = get_requirements("requirements.txt")
 
 setuptools.setup(
-    name="ciso-genai", # This is the name your package will be known by on PyPI
-    version="0.0.2", # <--- IMPORTANT: Version incremented to reflect changes and ensure unique upload.
-                     #      Always use a new version for each upload attempt to TestPyPI/PyPI.
-    author="Harsh Bopaliya", # Your Name
-    author_email="bopaliyaharsh7@gmail.com", # <--- IMPORTANT: Replace with your actual email
-    description="A framework for Causal Intelligence in Multi-Agent Generative AI.",
+    name="ciso-genai",
+    version="0.1.0",  # Updated version with working credit assignment
+    author="Harsh Bopaliya",
+    author_email="bopaliyaharsh7@gmail.com",
+    description="Causal Credit Assignment for Multi-Agent AI Systems - Determine which agent caused the reward",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/harshbopaliya/CISO-GENAI-Framework", # Corrected URL format (no Markdown)
-    # --- ADDED LICENSE FIELD ---
-    license="MIT License", # <--- This line was added/corrected to ensure license metadata is included.
-    # --- END ADDED LICENSE FIELD ---
+    url="https://github.com/harshbopaliya/CISO-GENAI-Framework",
+    license="MIT License",
     package_dir={'ciso_genai': 'src'},
     packages=['ciso_genai', 'ciso_genai.envs'],
-    # We don't need `setuptools.find_packages` with `where` or `exclude` here,
-    # as `package_dir` and explicit `packages` list handle the mapping.
     classifiers=[
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        "License :: OSI Approved :: MIT License", # This classifier is good for filtering on PyPI
+        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
     ],
     python_requires='>=3.8',
     install_requires=install_requires,
-    include_package_data=True, # This tells setuptools to include non-Python files specified in MANIFEST.in
+    extras_require={
+        'torch': ['torch>=2.0.0'],
+        'full': ['torch>=2.0.0', 'gymnasium>=0.29.0'],
+    },
+    include_package_data=True,
+    keywords=[
+        'multi-agent',
+        'reinforcement-learning', 
+        'credit-assignment',
+        'causal-inference',
+        'shapley-values',
+        'marl',
+        'ai',
+    ],
 )

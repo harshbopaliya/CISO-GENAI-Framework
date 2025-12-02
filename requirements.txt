@@ -1,19 +1,16 @@
 # Core dependencies for CISO-GENAI Framework
+# Causal Credit Assignment for Multi-Agent Systems
 
-# PyTorch (for neural networks) - specify version compatible with your setup
-# Note: For GPU support, users might need to install torch separately using
-#       PyTorch's official instructions (e.g., from pytorch.org)
-torch>=2.0.0
+# Numerical operations (required)
+numpy>=1.20.0
 
-# Numerical operations
-numpy>=1.26.0
-
-# Reinforcement learning environment API
-gymnasium>=1.0.0
-
-# Topological Data Analysis for group formation
-ripser>=0.6.12
-
-# YAML configuration file parsing
+# YAML configuration file parsing (required)
 PyYAML>=6.0.0
+
+# Optional: PyTorch for learnable policies
+# Install separately if needed: pip install torch
+# torch>=2.0.0
+
+# Optional: Gymnasium for extended environment compatibility
+# gymnasium>=0.29.0
 
